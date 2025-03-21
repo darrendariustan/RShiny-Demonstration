@@ -1,9 +1,11 @@
 services:
   r-platform:
+    container_name: terrific-traffic
     build: .
     ports:
       - "8787:8787"
       - "3838:3838"
+    image: team3/accidents-app:latest
     volumes:
       - r_home:/home
       - shiny_apps:/srv/shiny-server
