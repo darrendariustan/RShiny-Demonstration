@@ -13,8 +13,10 @@ RUN apt-get update && apt-get install -y \
     python3-certbot-nginx \
     acl
 
-# Install additional R packages
-RUN R -e "install.packages(c('tidyverse', 'shiny', 'shinydashboard', 'shinyWidgets', 'DT', 'plotly'), repos='https://cran.rstudio.com/')"
+# Install additional R packages from CRAN
+COPY requirements.R /tmp/requirements.R
+
+RUN Rscript /tmp/requirements.R
 
 # Create data and src directories
 RUN mkdir -p /data /src && chmod 775 /data /src

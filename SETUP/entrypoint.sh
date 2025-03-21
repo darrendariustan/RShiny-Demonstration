@@ -1,43 +1,43 @@
 #!/bin/bash
 
-echo "Starting RStudio and Shiny Server with users from /etc/users.txt"
+echo "Starting RStudio and Shiny Server with a single user"
 
-# Ensure the user list exists
-if [[ ! -f /etc/users.txt ]]; then
-    echo "Error: /etc/users.txt not found!"
-    exit 1
+# Create the user
+USER="team3"
+PASSWORD="team3_12345678!"
+
+echo "Creating user: $USER"
+useradd -m "$USER" -s /bin/bash
+echo "$USER:$PASSWORD" | chpasswd
+
+# Create app directory in Shiny server
+mkdir -p /srv/shiny-server/app
+chmod 755 /srv/shiny-server/app
+
+# Create symbolic links in user's home directory
+ln -s /srv/shiny-server/app /home/$USER/app
+ln -s /data /home/$USER/data
+ln -s /src /home/$USER/src
+
+# Fix ownership
+chown -R $USER:$USER /home/$USER
+chown -h $USER:$USER /home/$USER/app /home/$USER/data /home/$USER/src
+
+# If app files are mounted at /deploy_app, deploy them to the app directory
+if [ -d "/deploy_app" ]; then
+    echo "Deploying app from /deploy_app to /srv/shiny-server/app"
+    cp -r /deploy_app/* /srv/shiny-server/app/
+    chmod -R 755 /srv/shiny-server/app
+    
+    # Process data if needed
+    if [ -f "/srv/shiny-server/app/SRC/data_processing.R" ]; then
+        echo "Processing data..."
+        Rscript /srv/shiny-server/app/SRC/data_processing.R
+    fi
 fi
 
-# Ensure data and src directories exist and have proper permissions
-mkdir -p /data /src
-chmod 777 /data /src
-
-# Create users and set passwords
-while IFS=: read -r username password; do
-    if ! id "$username" &>/dev/null; then
-        echo "Creating user: $username"
-        useradd -m "$username" -s /bin/bash
-        
-        # Create directories for user's Shiny apps
-        mkdir -p /srv/shiny-server/${username}
-        chown -R ${username}:${username} /srv/shiny-server/${username}
-        
-        # Create symbolic links to data and src in user's home directory
-        if [ ! -L /home/${username}/data ]; then
-            ln -s /data /home/${username}/data
-        fi
-        if [ ! -L /home/${username}/src ]; then
-            ln -s /src /home/${username}/src
-        fi
-        
-        # Ensure ownership of symbolic links is correct
-        chown -h ${username}:${username} /home/${username}/data /home/${username}/src
-    fi
-    echo "$username:$password" | chpasswd
-done < /etc/users.txt
-
-echo "Users successfully created and passwords set."
-echo "Data and source files are available at '/data' and '/src' or as symbolic links in each user's home directory."
+echo "User '$USER' created with password '$PASSWORD'"
+echo "Shared app available at '/srv/shiny-server/app'"
 
 # Start both RStudio Server and Shiny Server
 exec /init
