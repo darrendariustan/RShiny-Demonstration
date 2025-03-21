@@ -1,0 +1,16 @@
+services:
+  r-platform:
+    build: .
+    ports:
+      - "8787:8787"
+      - "3838:3838"
+    volumes:
+      - r_home:/home
+      - shiny_apps:/srv/shiny-server
+      - ../DATA:/data
+      - ../SRC:/src
+    restart: unless-stopped
+
+volumes:
+  r_home:
+  shiny_apps:

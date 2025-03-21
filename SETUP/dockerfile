@@ -1,0 +1,30 @@
+# Use a more comprehensive image with both RStudio and Shiny
+FROM rocker/shiny-verse:latest
+
+# Install Git and other useful tools
+RUN apt-get update && apt-get install -y \
+    git \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    nano \
+    nginx \
+    certbot \
+    python3-certbot-nginx \
+    acl
+
+# Install additional R packages
+RUN R -e "install.packages(c('tidyverse', 'shiny', 'shinydashboard', 'shinyWidgets', 'DT', 'plotly'), repos='https://cran.rstudio.com/')"
+
+# Create data and src directories
+RUN mkdir -p /data /src && chmod 775 /data /src
+
+# Expose both RStudio and Shiny Server ports
+EXPOSE 8787 3838
+
+# Copy entrypoint script for user setup
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY users.txt /etc/users.txt
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
