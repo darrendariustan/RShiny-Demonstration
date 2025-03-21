@@ -26,7 +26,6 @@ EXPOSE 8787 3838
 
 # Copy entrypoint script for user setup
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY users.txt /etc/users.txt
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
