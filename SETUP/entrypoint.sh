@@ -28,11 +28,13 @@ chown -h "$USER:$USER" /home/$USER/app /home/$USER/data /home/$USER/src
 # Deploying app from /src to /srv/shiny-server/app
 echo "Deploying app from /src to /srv/shiny-server/app"
 
-if [ -d "/srv/shiny-server/app" ]; then
-    rm -rf /srv/shiny-server/app/*
-fi
+# Clear the target directory to avoid recursion
+rm -rf /srv/shiny-server/app/*
 
-rsync -av --exclude='/srv/shiny-server/app' /src/ /srv/shiny-server/app/
+# Copy all files from /src to /srv/shiny-server/app
+cp -r /src/* /srv/shiny-server/app/
+
+# Set permissions
 chmod -R 755 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
