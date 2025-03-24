@@ -10,8 +10,6 @@ required_packages <- c(
   "ggplot2",
   "DT",
   "tidyr",
-  
-  # Additional useful packages
   "plotly",        # For interactive plots
   "leaflet",       # For maps (if you plan to add map functionality)
   "shinyWidgets",  # For additional UI components
@@ -20,7 +18,6 @@ required_packages <- c(
   "lubridate"      # For date/time handling
 )
 
-# Function to install packages if not already installed
 install_if_missing <- function(pkg) {
   if (!require(pkg, character.only = TRUE)) {
     install.packages(pkg, repos = "https://cran.rstudio.com/")
@@ -28,7 +25,6 @@ install_if_missing <- function(pkg) {
 }
 
 # Install required packages
-invisible(sapply(required_packages, install_if_missing))
+sapply(required_packages, install_if_missing)
 
-# Print confirmation message
 cat("All required packages installed.\n")

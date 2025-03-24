@@ -15,29 +15,45 @@ mkdir -p /srv/shiny-server/app
 chmod 755 /srv/shiny-server/app
 
 # Create symbolic links in user's home directory
-ln -s /srv/shiny-server/app /home/$USER/app
-ln -s /data /home/$USER/data
-ln -s /src /home/$USER/src
+if [ ! -L /home/$USER/data ]; then
+    ln -s /data /home/$USER/data
+fi
+
+if [ ! -L /home/$USER/src ]; then
+    ln -s /src /home/$USER/src
+fi
+
+if [ ! -L /home/$USER/app ]; then
+    ln -s /srv/shiny-server/app /home/$USER/app
+fi
 
 # Fix ownership
 chown -R $USER:$USER /home/$USER
 chown -h $USER:$USER /home/$USER/app /home/$USER/data /home/$USER/src
 
-# If app files are mounted at /deploy_app, deploy them to the app directory
-if [ -d "/deploy_app" ]; then
-    echo "Deploying app from /deploy_app to /srv/shiny-server/app"
-    cp -r /deploy_app/* /srv/shiny-server/app/
-    chmod -R 755 /srv/shiny-server/app
-    
-    # Process data if needed
-    if [ -f "/srv/shiny-server/app/SRC/data_processing.R" ]; then
-        echo "Processing data..."
-        Rscript /srv/shiny-server/app/SRC/data_processing.R
-    fi
-fi
+# Copy from /src to Shiny app directory 
+echo "Deploying app from /src to /srv/shiny-server/app"
+cp -r /src/* /srv/shiny-server/app/
+chmod -R 755 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
 echo "Shared app available at '/srv/shiny-server/app'"
 
-# Start both RStudio Server and Shiny Server
-exec /init
+# Start RStudio Server
+if command -v rstudio-server &> /dev/null; then
+    echo "Starting RStudio Server..."
+    rstudio-server start
+else
+    echo "RStudio Server is not installed!"
+fi
+
+# Start Shiny Server
+if command -v shiny-server &> /dev/null; then
+    echo "Starting Shiny Server..."
+    shiny-server
+else
+    echo "Shiny Server is not installed!"
+fi
+
+# Keep the container running
+tail -f /dev/null
