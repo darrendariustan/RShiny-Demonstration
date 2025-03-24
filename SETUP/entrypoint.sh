@@ -15,32 +15,24 @@ mkdir -p /srv/shiny-server/app
 chmod 755 /srv/shiny-server/app
 
 # Create symbolic links in user's home directory
-if [ ! -L /home/$USER/data ]; then
-    ln -s /data /home/$USER/data
-fi
-
-if [ ! -L /home/$USER/src ]; then
-    ln -s /src /home/$USER/src
-fi
-
-if [ ! -L /home/$USER/app ]; then
-    ln -s /srv/shiny-server/app /home/$USER/app
-fi
+for dir in data src app; do
+    if [ ! -L "/home/$USER/$dir" ]; then
+        ln -s "/$dir" "/home/$USER/$dir"
+    fi
+done
 
 # Fix ownership
-chown -R $USER:$USER /home/$USER
-chown -h $USER:$USER /home/$USER/app /home/$USER/data /home/$USER/src
-
+chown -R "$USER:$USER" "/home/$USER"
+chown -h "$USER:$USER" /home/$USER/app /home/$USER/data /home/$USER/src
 
 # Deploying app from /src to /srv/shiny-server/app
 echo "Deploying app from /src to /srv/shiny-server/app"
 
-# Clear the target directory to avoid recursion
-rm -rf /srv/shiny-server/app/*
+if [ -d "/srv/shiny-server/app" ]; then
+    rm -rf /srv/shiny-server/app/*
+fi
 
-# Copy only the contents of /src, excluding the app directory itself
-cp -r /src/* /srv/shiny-server/app/
-
+rsync -av --exclude='/srv/shiny-server/app' /src/ /srv/shiny-server/app/
 chmod -R 755 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
