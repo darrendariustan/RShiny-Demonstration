@@ -31,9 +31,16 @@ fi
 chown -R $USER:$USER /home/$USER
 chown -h $USER:$USER /home/$USER/app /home/$USER/data /home/$USER/src
 
-# Copy from /src to Shiny app directory 
+
+# Deploying app from /src to /srv/shiny-server/app
 echo "Deploying app from /src to /srv/shiny-server/app"
+
+# Clear the target directory to avoid recursion
+rm -rf /srv/shiny-server/app/*
+
+# Copy only the contents of /src, excluding the app directory itself
 cp -r /src/* /srv/shiny-server/app/
+
 chmod -R 755 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
