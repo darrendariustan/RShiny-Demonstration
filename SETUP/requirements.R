@@ -17,20 +17,30 @@ required_packages <- c(
   "scales",
   
   # Data manipulation 
-  "dplyr"
+  "dplyr",
+  "tidyr"
 )
 
-# Check and install missing packages
+# Set CRAN repository
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
+
+# Install all required packages
 for (pkg in required_packages) {
+  message("Checking package: ", pkg)
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    install.packages(pkg, repos = "https://cran.rstudio.com/")
-    cat(paste0("Installed package: ", pkg, "\n"))
+    message("Installing package: ", pkg)
+    tryCatch({
+      install.packages(pkg, quiet = TRUE)
+      if (!requireNamespace(pkg, quietly = TRUE)) {
+        stop(paste("Failed to install package:", pkg))
+      }
+    }, error = function(e) {
+      message("Error installing ", pkg, ": ", e$message)
+      stop(e)
+    })
   } else {
-    cat(paste0("Package already installed: ", pkg, "\n"))
+    message("Package already installed: ", pkg)
   }
 }
 
-# Load all required packages
-invisible(lapply(required_packages, library, character.only = TRUE))
-
-cat("\nAll required packages installed and loaded.\n")
+message("\nAll required packages installed successfully.\n")
