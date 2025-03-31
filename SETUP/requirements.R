@@ -3,7 +3,7 @@
 # Set CRAN repository
 options(repos = c(CRAN = "https://cran.rstudio.com/"))
 
-# Define required packages (temporarily removing map packages)
+# Define required packages
 required_packages <- c(
   "shiny",
   "shinydashboard",
@@ -14,7 +14,12 @@ required_packages <- c(
   "heatmaply",
   "scales",
   "dplyr",
-  "tidyr"
+  "tidyr",
+  "sp",
+  "raster",
+  "terra",
+  "leaflet",
+  "leaflet.extras"
 )
 
 # Install packages
