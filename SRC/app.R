@@ -1,20 +1,7 @@
 # Clear environment first
 rm(list = ls())
 
-# Install required packages if not already installed
-if (!require("shiny")) install.packages("shiny")
-if (!require("shinydashboard")) install.packages("shinydashboard") 
-if (!require("leaflet")) install.packages("leaflet")
-if (!require("leaflet.extras")) install.packages("leaflet.extras")
-if (!require("dplyr")) install.packages("dplyr")
-if (!require("ggplot2")) install.packages("ggplot2")
-if (!require("plotly")) install.packages("plotly")
-if (!require("viridis")) install.packages("viridis")
-if (!require("heatmaply")) install.packages("heatmaply")
-if (!require("scales")) install.packages("scales")
-if (!require("DT")) install.packages("DT")
-
-# Load all required libraries
+# Load required libraries
 library(shiny)
 library(shinydashboard)
 library(leaflet)
@@ -26,6 +13,7 @@ library(viridis)
 library(heatmaply)
 library(scales)
 library(DT)
+library(tidyr)
 
 # Load data
 load("DATA/processed_accidents.RData")
