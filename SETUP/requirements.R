@@ -3,15 +3,13 @@
 # Set CRAN repository
 options(repos = c(CRAN = "https://cran.rstudio.com/"))
 
-# Define required packages
+# Define required packages (temporarily removing map packages)
 required_packages <- c(
   "shiny",
   "shinydashboard",
   "ggplot2",
   "plotly",
   "DT",
-  "leaflet",
-  "leaflet.extras",
   "viridis",
   "heatmaply",
   "scales",
@@ -19,10 +17,10 @@ required_packages <- c(
   "tidyr"
 )
 
-# Install packages with binary preference
+# Install packages
 for (pkg in required_packages) {
   message("Installing: ", pkg)
-  install.packages(pkg, type = "binary", quiet = FALSE)
+  install.packages(pkg)
 }
 
 message("Done installing packages")
