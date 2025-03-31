@@ -38,44 +38,77 @@ print(sort(unique(accidents$Country)))
 
 # Define UI
 ui <- dashboardPage(
-  skin = "blue",
-  dashboardHeader(title = "Road Safety Analytics"),
+  skin = "black",
+  dashboardHeader(title = "Traffic Accidents 🚘"),
   dashboardSidebar(
-    # Dark theme for sidebar
-    tags$style(HTML("
-      .main-sidebar { background-color: #2c3e50 !important; }
-      .main-header .logo { background-color: #2c3e50 !important; }
-      .main-header .navbar { background-color: #2c3e50 !important; }
-      .sidebar a { color: #ffffff !important; }
-    ")),
+    # Dark theme for sidebar and header
+    tags$head(
+      tags$style(HTML("
+        /* Dark theme for header */
+        .skin-blue .main-header .logo,
+        .skin-blue .main-header .navbar {
+          background-color: #2c3e50 !important;
+        }
+        .skin-blue .main-header .logo:hover {
+          background-color: #2c3e50 !important;
+        }
+        
+        /* Dark theme for sidebar */
+        .skin-blue .main-sidebar {
+          background-color: #2c3e50 !important;
+        }
+        .skin-blue .sidebar a {
+          color: #ffffff !important;
+        }
+        .skin-blue .sidebar-menu > li.active > a,
+        .skin-blue .sidebar-menu > li:hover > a {
+          background-color: #34495e !important;
+        }
+        
+        /* White theme for content */
+        .content-wrapper, .right-side {
+          background-color: #ffffff !important;
+        }
+        .box {
+          background-color: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        /* Box header styling */
+        .box.box-primary {
+          border-top-color: #2c3e50 !important;
+        }
+        .box-header {
+          background-color: #2c3e50 !important;
+          color: #ffffff !important;
+        }
+        .box-header .box-title {
+          color: #ffffff !important;
+        }
+      "))
+    ),
     
     # Inputs
     selectInput("country", "Select Country:", 
-                choices = sort(unique(accidents$Country)),
+                choices = c("All", sort(unique(accidents$Country))),
                 selected = "USA"),
     
     sliderInput("year_range", "Select Year Range:",
                 min = min(accidents$Year, na.rm = TRUE),
                 max = max(accidents$Year, na.rm = TRUE),
-                value = c(min(accidents$Year, na.rm = TRUE), max(accidents$Year, na.rm = TRUE)),
+                value = c(max(accidents$Year, na.rm = TRUE) - 2, max(accidents$Year, na.rm = TRUE)),
                 step = 1,
                 sep = ""),
     
     checkboxGroupInput("severity", "Accident Severity:", 
-                choices = unique(accidents$Accident_Severity),
-                selected = unique(accidents$Accident_Severity)[1]),
+                choices = c("Minor", "Moderate", "Serious", "Severe", "Critical"),
+                selected = c("Severe", "Critical")),
     
     checkboxGroupInput("weather", "Weather Condition:", 
                 choices = unique(accidents$`Weather Conditions`),
-                selected = unique(accidents$`Weather Conditions`)[1])
+                selected = unique(accidents$`Weather Conditions`)[1:3])
   ),
   dashboardBody(
-    # White background for main content
-    tags$style(HTML("
-      .content-wrapper, .right-side { background-color: #ffffff; }
-      .box { background-color: #ffffff !important; }
-    ")),
-    
     # Main KPIs Row
     fluidRow(
       valueBoxOutput("severity_score_box", width = 3),
@@ -113,6 +146,7 @@ server <- function(input, output, session) {
     
     data <- accidents
     
+    # Only filter by country if not "All"
     if(input$country != "All") {
       data <- data %>% filter(Country == input$country)
     }
@@ -135,7 +169,7 @@ server <- function(input, output, session) {
     avg_severity <- mean(filtered_data()$Severity_Score, na.rm = TRUE)
     valueBox(
       formatC(avg_severity, format = "f", digits = 2),
-      "Severity Score",
+      "Avg. Severity Score",
       icon = icon("exclamation-triangle"),
       color = "red"
     )
@@ -145,7 +179,7 @@ server <- function(input, output, session) {
     fatality_rate <- mean(filtered_data()$Fatality_Rate, na.rm = TRUE) * 100
     valueBox(
       paste0(formatC(fatality_rate, format = "f", digits = 2), "%"),
-      "Fatality Rate",
+      "Avg. Fatality Rate",
       icon = icon("heartbeat"),
       color = "maroon"
     )
@@ -174,53 +208,102 @@ server <- function(input, output, session) {
   # Accidents over time plot
   output$accident_trends <- renderPlotly({
     yearly_data <- filtered_data() %>%
-      group_by(Year) %>%
+      group_by(Year, Accident_Severity) %>%
       summarise(
         Count = n(),
-        Fatality_Rate = mean(Fatality_Rate, na.rm = TRUE) * 100
+        .groups = 'drop'
+      ) %>%
+      # Ensure Accident_Severity is a factor with the correct order
+      mutate(Accident_Severity = factor(
+        Accident_Severity,
+        levels = c("Minor", "Moderate", "Serious", "Severe", "Critical")
+      ))
+    
+    # Calculate overall yearly severity for the line
+    yearly_severity <- filtered_data() %>%
+      group_by(Year) %>%
+      summarise(
+        Avg_Severity = mean(Severity_Score, na.rm = TRUE),
+        .groups = 'drop'
       )
     
+    # Define fixed colors for severity levels with better visibility
+    severity_colors <- c(
+      "Minor" = "#91bfdb",      # Blue
+      "Moderate" = "#4575b4",   # Darker blue
+      "Serious" = "#fee090",    # Yellow
+      "Severe" = "#fc8d59",     # Orange
+      "Critical" = "#d73027"    # Red
+    )
+    
+    # Create the stacked bar chart with line
     plot_ly() %>%
       add_bars(
         data = yearly_data,
         x = ~Year,
         y = ~Count,
-        name = "Number of Accidents",
-        marker = list(color = "#1f77b4")
+        color = ~Accident_Severity,
+        colors = severity_colors,
+        name = ~Accident_Severity,
+        hovertemplate = paste(
+          "Year: %{x}<br>",
+          "Severity: %{data.name}<br>",
+          "Count: %{y}<br>",
+          "<extra></extra>"
+        )
       ) %>%
       add_trace(
-        data = yearly_data,
+        data = yearly_severity,
         x = ~Year,
-        y = ~Fatality_Rate,
-        name = "Fatality Rate (%)",
+        y = ~Avg_Severity,
+        name = "Avg. Severity Score",
         type = "scatter",
         mode = "lines+markers",
         yaxis = "y2",
-        line = list(color = "#e74c3c", width = 3),
-        marker = list(color = "#e74c3c", size = 8)
+        line = list(color = "#2c3e50", width = 3),
+        marker = list(color = "#2c3e50", size = 8),
+        hovertemplate = paste(
+          "Year: %{x}<br>",
+          "Avg. Severity Score: %{y:.2f}<br>",
+          "<extra></extra>"
+        )
       ) %>%
       layout(
-        xaxis = list(title = "Year", tickmode = "linear"),
-        yaxis = list(title = "Number of Accidents", side = "left"),
+        barmode = "stack",
+        xaxis = list(
+          title = "Year",
+          tickmode = "linear"
+        ),
+        yaxis = list(
+          title = "Number of Accidents",
+          side = "left"
+        ),
         yaxis2 = list(
-          title = "Fatality Rate (%)",
+          title = "Average Severity Score",
           side = "right",
           overlaying = "y",
-          range = c(0, max(yearly_data$Fatality_Rate, na.rm = TRUE) * 1.1)
+          range = c(0, max(yearly_severity$Avg_Severity, na.rm = TRUE) * 1.1)
         ),
-        legend = list(x = 0.1, y = 1),
+        legend = list(
+          title = list(text = "Accident Severity"),
+          orientation = "h",   # Make legend horizontal
+          x = 0.5,            # Center horizontally
+          y = -0.2,           # Move below the plot
+          xanchor = "center", # Center the legend
+          traceorder = "reversed"  # This will reverse the legend order to match the stacking
+        ),
         hovermode = "x unified",
         plot_bgcolor = "#ffffff",
-        paper_bgcolor = "#ffffff"
+        paper_bgcolor = "#ffffff",
+        margin = list(b = 100)  # Add bottom margin to make room for the legend
       )
   })
   
   # Map visualization
   output$accident_map <- renderLeaflet({
     map_data <- filtered_data()
-    bounds <- country_bounds[[input$country]]
     
-    if(nrow(map_data) == 0 || is.null(bounds)) {
+    if(nrow(map_data) == 0) {
       return(
         leaflet() %>%
           addProviderTiles(providers$CartoDB.Positron) %>%
@@ -231,21 +314,23 @@ server <- function(input, output, session) {
     
     leaflet(map_data) %>%
       addProviderTiles(providers$CartoDB.Positron) %>%
-      fitBounds(
-        lng1 = bounds$min_lon,
-        lat1 = bounds$min_lat,
-        lng2 = bounds$max_lon,
-        lat2 = bounds$max_lat
+      addHeatmap(
+        lng = ~Longitude,
+        lat = ~Latitude,
+        intensity = ~Severity_Score,
+        blur = 20,
+        max = max(map_data$Severity_Score),
+        radius = 15
       ) %>%
       addCircleMarkers(
         lng = ~Longitude,
         lat = ~Latitude,
-        radius = ~sqrt(Severity_Score) * 2,
-        fillColor = ~colorNumeric("viridis", domain = Severity_Score)(Severity_Score),
+        radius = 3,
         color = "white",
         weight = 1,
-        opacity = 0.8,
-        fillOpacity = 0.8,
+        opacity = 0.5,
+        fillColor = ~colorNumeric("viridis", domain = Severity_Score)(Severity_Score),
+        fillOpacity = 0.7,
         popup = ~paste(
           "Severity Score:", round(Severity_Score, 2), "<br>",
           "Accident Severity:", Accident_Severity, "<br>",
