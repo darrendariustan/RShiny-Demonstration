@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     acl
 
-# Install additional R packages from CRAN
+# Install R packages using requirements.R
 COPY requirements.R /tmp/requirements.R
 RUN Rscript /tmp/requirements.R
 
