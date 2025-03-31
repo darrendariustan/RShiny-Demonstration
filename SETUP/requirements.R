@@ -20,17 +20,18 @@ required_packages <- c(
   "dplyr"
 )
 
-# Check and install missing packages
+# First, install all missing packages
 for (pkg in required_packages) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
+    message("Installing package: ", pkg)
     install.packages(pkg, repos = "https://cran.rstudio.com/")
-    cat(paste0("Installed package: ", pkg, "\n"))
-  } else {
-    cat(paste0("Package already installed: ", pkg, "\n"))
   }
 }
 
-# Load all required packages
-invisible(lapply(required_packages, library, character.only = TRUE))
+# Then, try to load all packages
+for (pkg in required_packages) {
+  message("Loading package: ", pkg)
+  library(pkg, character.only = TRUE)
+}
 
-cat("\nAll required packages installed and loaded.\n")
+message("\nAll required packages installed and loaded successfully.\n")
