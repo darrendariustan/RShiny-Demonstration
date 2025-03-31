@@ -22,7 +22,7 @@ required_packages <- c(
 # Install packages with binary preference
 for (pkg in required_packages) {
   message("Installing: ", pkg)
-  install.packages(pkg, type = "binary", quiet = TRUE)
+  install.packages(pkg, type = "binary", quiet = FALSE)
 }
 
 message("Done installing packages")
