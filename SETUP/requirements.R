@@ -1,30 +1,36 @@
-# R packages required for the traffic accidents analysis app
+# R packages required for the road accident analysis dashboard
 
-# Install required packages if not already installed
+# Define required packages
 required_packages <- c(
-  # Core packages
+  # Core Shiny packages
   "shiny",
   "shinydashboard",
-  "tidyverse",
-  "dplyr",
+  
+  # Data visualization and interaction
   "ggplot2",
+  "plotly",
   "DT",
-  "tidyr",
-  "plotly",        # For interactive plots
-  "leaflet",       # For maps (if you plan to add map functionality)
-  "shinyWidgets",  # For additional UI components
-  "RColorBrewer",  # For color palettes
-  "scales",        # For formatting numbers
-  "lubridate"      # For date/time handling
+  "leaflet",
+  "leaflet.extras",
+  "viridis",
+  "heatmaply",
+  "scales",
+  
+  # Data manipulation 
+  "dplyr"
 )
 
-install_if_missing <- function(pkg) {
-  if (!require(pkg, character.only = TRUE)) {
+# Check and install missing packages
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
     install.packages(pkg, repos = "https://cran.rstudio.com/")
+    cat(paste0("Installed package: ", pkg, "\n"))
+  } else {
+    cat(paste0("Package already installed: ", pkg, "\n"))
   }
 }
 
-# Install required packages
-sapply(required_packages, install_if_missing)
+# Load all required packages
+invisible(lapply(required_packages, library, character.only = TRUE))
 
-cat("All required packages installed.\n")
+cat("\nAll required packages installed and loaded.\n")

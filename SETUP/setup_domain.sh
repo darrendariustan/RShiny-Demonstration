@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./setup_domain.sh rstudio.timosachs.de
+# Usage: ./setup_domain.sh rstudio.yourdomain.de
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 domain.name"

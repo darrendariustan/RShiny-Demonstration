@@ -6,6 +6,12 @@ services:
       - "8787:8787"
       - "3838:3838"
     image: team3/accidents-app:latest
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+        reservations:
+          memory: 4G
     volumes:
       - r_home:/home
       - shiny_apps:/srv/shiny-server
