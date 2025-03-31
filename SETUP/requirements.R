@@ -19,10 +19,10 @@ required_packages <- c(
   "tidyr"
 )
 
-# Install packages
+# Install packages with binary preference
 for (pkg in required_packages) {
   message("Installing: ", pkg)
-  install.packages(pkg)
+  install.packages(pkg, type = "binary", quiet = TRUE)
 }
 
 message("Done installing packages")
