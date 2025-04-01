@@ -7,6 +7,8 @@ USER="team3"
 PASSWORD="team3_12345678!"
 
 echo "Creating user: $USER"
+# Remove existing user if exists
+userdel -r "$USER" 2>/dev/null || true
 useradd -m "$USER" -s /bin/bash
 echo "$USER:$PASSWORD" | chpasswd
 
@@ -35,7 +37,7 @@ rm -rf /srv/shiny-server/app/*
 cp -r /src/* /srv/shiny-server/app/
 
 # Set permissions
-chmod -R 755 /srv/shiny-server/app
+chmod -R 777 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
 echo "Shared app available at '/srv/shiny-server/app'"
@@ -45,15 +47,17 @@ if command -v rstudio-server &> /dev/null; then
     echo "Starting RStudio Server..."
     rstudio-server start
 else
-    echo "RStudio Server is not installed!"
+    echo "ERROR: RStudio Server is not installed!"
+    exit 1
 fi
 
-# Start Shiny Server
+# Start Shiny Server as root
 if command -v shiny-server &> /dev/null; then
     echo "Starting Shiny Server..."
     shiny-server
 else
-    echo "Shiny Server is not installed!"
+    echo "ERROR: Shiny Server is not installed!"
+    exit 1
 fi
 
 # Keep the container running

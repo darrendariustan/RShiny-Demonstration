@@ -15,8 +15,52 @@ library(scales)
 library(DT)
 library(tidyr)
 
-# Load data
-load("DATA/processed_accidents.RData")
+# Load data - try multiple paths to be able to run the app locally and in the container
+data_paths <- c(
+  "/data/processed_accidents.Rdata",
+  "DATA/processed_accidents.RData",
+  "data/processed_accidents.Rdata"
+)
+
+bounds_paths <- c(
+  "/data/country_bounds.RData",
+  "DATA/country_bounds.RData",
+  "data/country_bounds.RData"
+)
+
+data_loaded <- FALSE
+bounds_loaded <- FALSE
+
+for (path in data_paths) {
+  tryCatch({
+    load(path)
+    print(paste("Successfully loaded data from:", path))
+    data_loaded <- TRUE
+    break
+  }, error = function(e) {
+    print(paste("Failed to load from:", path))
+  })
+}
+
+for (path in bounds_paths) {
+  tryCatch({
+    load(path)
+    print(paste("Successfully loaded bounds from:", path))
+    bounds_loaded <- TRUE
+    break
+  }, error = function(e) {
+    print(paste("Failed to load bounds from:", path))
+  })
+}
+
+if (!data_loaded) {
+  stop("Could not load data from any of the expected locations. Please ensure the data file exists in one of the following paths: ", 
+       paste(data_paths, collapse = ", "))
+}
+
+# Clean up country names and ensure consistent format
+accidents <- accidents %>%
+  mutate(Country = trimws(Country))  # Remove any whitespace
 
 # Print data info for debugging
 print("Data loaded. Checking contents:")
@@ -76,25 +120,25 @@ ui <- dashboardPage(
       "))
     ),
     
-    # Inputs
+    # Inputs with cleaned country names
     selectInput("country", "Select Country:", 
-                choices = c("All", sort(unique(accidents$Country))),
-                selected = "USA"),
+                choices = c("All", sort(unique(trimws(accidents$Country)))),
+                selected = "Germany"),
     
     sliderInput("year_range", "Select Year Range:",
                 min = min(accidents$Year, na.rm = TRUE),
                 max = max(accidents$Year, na.rm = TRUE),
-                value = c(max(accidents$Year, na.rm = TRUE) - 2, max(accidents$Year, na.rm = TRUE)),
+                value = c(max(accidents$Year, na.rm = TRUE) - 6, max(accidents$Year, na.rm = TRUE)),
                 step = 1,
                 sep = ""),
     
     checkboxGroupInput("severity", "Accident Severity:", 
                 choices = c("Minor", "Moderate", "Serious", "Severe", "Critical"),
-                selected = c("Severe", "Critical")),
+                selected = c("Moderate","Severe", "Critical")),
     
     checkboxGroupInput("weather", "Weather Condition:", 
                 choices = unique(accidents$`Weather Conditions`),
-                selected = unique(accidents$`Weather Conditions`)[1:3])
+                selected = unique(accidents$`Weather Conditions`)[1:4])
   ),
   dashboardBody(
     # Main KPIs Row
@@ -122,11 +166,8 @@ ui <- dashboardPage(
 
 # Define server
 server <- function(input, output, session) {
-  # Debug output for countries
-  output$debug_countries <- renderPrint({
-    cat("Available countries:\n")
-    print(unique(accidents$Country))
-  })
+  # Initialize cache
+  filtered_data_cache <- reactiveVal(NULL)
   
   # Modified filtered data to handle 'All' selection
   filtered_data <- reactive({
@@ -134,23 +175,63 @@ server <- function(input, output, session) {
     
     data <- accidents
     
+    # Print debugging information
+    print(paste("Selected country:", input$country))
+    print(paste("Unique countries in data:", paste(unique(data$Country), collapse=", ")))
+    print(paste("Number of rows before filtering:", nrow(data)))
+    
     # Only filter by country if not "All"
     if(input$country != "All") {
-      data <- data %>% filter(Country == input$country)
+      # Make sure we're matching the exact country name
+      data <- data %>% 
+        filter(Country == !!input$country)  # Use exact matching with !!
+      print(paste("Number of rows after country filtering:", nrow(data)))
     }
     
-    data %>%
+    filtered <- data %>%
       filter(Year >= input$year_range[1],
              Year <= input$year_range[2],
              Accident_Severity %in% input$severity,
              `Weather Conditions` %in% input$weather)
+    
+    print(paste("Final number of rows after all filtering:", nrow(filtered)))
+    
+    # Update cache
+    filtered_data_cache(filtered)
+    filtered
+  })
+  
+  # Clear cache when inputs change
+  observe({
+    input$country
+    input$year_range
+    input$severity
+    input$weather
+    filtered_data_cache(NULL)
   })
   
   # Add country bounds data
   country_bounds <- list(
     USA = list(min_lat = 25, max_lat = 50, min_lon = -125, max_lon = -65),
-    UK = list(min_lat = 50, max_lat = 59, min_lon = -8, max_lon = 2)
+    UK = list(min_lat = 50, max_lat = 59, min_lon = -8, max_lon = 2),
+    Canada = list(min_lat = 42, max_lat = 83, min_lon = -141, max_lon = -52),
+    India = list(min_lat = 8, max_lat = 37, min_lon = 68, max_lon = 97),
+    China = list(min_lat = 18, max_lat = 53, min_lon = 73, max_lon = 135),
+    Japan = list(min_lat = 24, max_lat = 46, min_lon = 123, max_lon = 146),
+    Russia = list(min_lat = 41, max_lat = 82, min_lon = 19, max_lon = 180),
+    Brazil = list(min_lat = -34, max_lat = 6, min_lon = -74, max_lon = -34),
+    Germany = list(min_lat = 47, max_lat = 55, min_lon = 6, max_lon = 15),
+    Australia = list(min_lat = -44, max_lat = -10, min_lon = 113, max_lon = 154)
   )
+  
+  # Update map view based on selected country
+  observe({
+    if(input$country != "All" && !is.null(country_bounds[[input$country]])) {
+      bounds <- country_bounds[[input$country]]
+      leafletProxy("accident_map") %>%
+        fitBounds(bounds$min_lon, bounds$min_lat, bounds$max_lon, bounds$max_lat)
+    }
+  })
   
   # KPI Outputs
   output$severity_score_box <- renderValueBox({
