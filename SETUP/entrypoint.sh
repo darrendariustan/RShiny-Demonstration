@@ -37,8 +37,7 @@ rm -rf /srv/shiny-server/app/*
 cp -r /src/* /srv/shiny-server/app/
 
 # Set permissions
-chown -R "$USER:shiny" /srv/shiny-server/app
-chmod -R 775 /srv/shiny-server/app
+chmod -R 777 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
 echo "Shared app available at '/srv/shiny-server/app'"
@@ -48,16 +47,17 @@ if command -v rstudio-server &> /dev/null; then
     echo "Starting RStudio Server..."
     rstudio-server start
 else
-    echo "RStudio Server is not installed!"
+    echo "ERROR: RStudio Server is not installed!"
+    exit 1
 fi
 
-# Start Shiny Server as non-root user
+# Start Shiny Server as root
 if command -v shiny-server &> /dev/null; then
     echo "Starting Shiny Server..."
-    # Switch to the user and start shiny-server
-    su - "$USER" -c "shiny-server"
+    shiny-server
 else
-    echo "Shiny Server is not installed!"
+    echo "ERROR: Shiny Server is not installed!"
+    exit 1
 fi
 
 # Keep the container running

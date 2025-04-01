@@ -40,9 +40,8 @@ RUN mkdir -p /data /src && \
 # Expose both RStudio and Shiny Server ports
 EXPOSE 8787 3838
 
-# Copy entrypoint script for user setup
+# Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Use CMD instead of ENTRYPOINT for easier debugging
-CMD ["/bin/bash"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
