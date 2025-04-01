@@ -137,30 +137,75 @@ accidents <- accidents %>%
 #### Geographic Coordinates Generation ####
 world_map <- map_data("world")
 
+# Create country mapping
 country_mapping <- c(
-  "USA" = "United States", 
-  "UK" = "UK",
-  "Canada" = "Canada",
-  "India" = "India",
-  "China" = "China",
-  "Japan" = "Japan",
+  "USA" = "USA", 
+  "UK" = "UK", 
+  "Canada" = "Canada", 
+  "India" = "India", 
+  "China" = "China", 
+  "Japan" = "Japan", 
   "Russia" = "Russia",
-  "Brazil" = "Brazil",
-  "Germany" = "Germany",
+  "Brazil" = "Brazil", 
+  "Germany" = "Germany", 
   "Australia" = "Australia"
 )
 
-# Process coordinates by group with state-based distribution for USA
+# Fallback coordinates for countries not found
+fallback_coords <- tibble(
+  country_name = c("USA", "UK", "Canada", "India", "China", "Japan", "Russia", "Brazil", "Germany", "Australia"),
+  lat = c(39.8, 54.6, 56.1, 20.6, 35.9, 36.2, 61.5, -14.2, 51.1, -25.3),
+  lon = c(-98.6, -3.4, -106.3, 79.0, 104.2, 138.3, 105.3, -51.9, 10.4, 133.8)
+)
+
+# First, find the bounding boxes for each country once
+country_bounds <- list()
+for (country in names(country_mapping)) {
+  map_country <- country_mapping[country]
+  bounds <- world_map %>% filter(region == map_country)
+  
+  if(nrow(bounds) > 0) {
+    # For USA, restrict to continental US
+    if(country == "USA") {
+      bounds <- bounds %>%
+        filter(lat >= 25 & lat <= 50 & long >= -125 & long <= -65)
+    }
+    
+    country_bounds[[country]] <- list(
+      min_lat = min(bounds$lat),
+      max_lat = max(bounds$lat),
+      min_lon = min(bounds$long),
+      max_lon = max(bounds$long)
+    )
+  } else {
+    # Use fallback coordinates if country not found
+    fallback <- fallback_coords %>% filter(country_name == country)
+    if(nrow(fallback) > 0) {
+      country_bounds[[country]] <- list(
+        min_lat = fallback$lat - 5,
+        max_lat = fallback$lat + 5,
+        min_lon = fallback$lon - 5,
+        max_lon = fallback$lon + 5
+      )
+    }
+  }
+}
+
+# Process coordinates by group
 accidents <- accidents %>%
   group_by(Country) %>%
   mutate(
     Latitude = case_when(
-      Country == "USA" ~ runif(n(), min = 25, max = 49),    # Continental US bounds
-      TRUE ~ runif(n(), min = 25, max = 49)                 # Default to US bounds for testing
+      Country %in% names(country_bounds) ~ runif(n(), 
+                                               country_bounds[[first(Country)]]$min_lat, 
+                                               country_bounds[[first(Country)]]$max_lat),
+      TRUE ~ fallback_coords$lat[match(Country, fallback_coords$country_name)]
     ),
     Longitude = case_when(
-      Country == "USA" ~ runif(n(), min = -124, max = -67), # Continental US bounds
-      TRUE ~ runif(n(), min = -124, max = -67)              # Default to US bounds for testing
+      Country %in% names(country_bounds) ~ runif(n(), 
+                                               country_bounds[[first(Country)]]$min_lon, 
+                                               country_bounds[[first(Country)]]$max_lon),
+      TRUE ~ fallback_coords$lon[match(Country, fallback_coords$country_name)]
     )
   ) %>%
   ungroup()
