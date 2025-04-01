@@ -37,8 +37,8 @@ rm -rf /srv/shiny-server/app/*
 cp -r /src/* /srv/shiny-server/app/
 
 # Set permissions
-chown -R "$USER:$USER" /srv/shiny-server/app
-chmod -R 755 /srv/shiny-server/app
+chown -R "$USER:shiny" /srv/shiny-server/app
+chmod -R 775 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
 echo "Shared app available at '/srv/shiny-server/app'"
@@ -54,7 +54,8 @@ fi
 # Start Shiny Server as non-root user
 if command -v shiny-server &> /dev/null; then
     echo "Starting Shiny Server..."
-    sudo -u "$USER" shiny-server
+    # Switch to the user and start shiny-server
+    su - "$USER" -c "shiny-server"
 else
     echo "Shiny Server is not installed!"
 fi

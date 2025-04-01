@@ -15,8 +15,28 @@ library(scales)
 library(DT)
 library(tidyr)
 
-# Load data
-load("DATA/processed_accidents.RData")
+# Load data - try multiple paths to be able to run the app locally and in the container
+data_paths <- c(
+  "/data/processed_accidents.Rdata",
+  "DATA/processed_accidents.RData",
+  "data/processed_accidents.Rdata"
+)
+
+data_loaded <- FALSE
+for (path in data_paths) {
+  tryCatch({
+    load(path)
+    print(paste("Successfully loaded data from:", path))
+    data_loaded <- TRUE
+    break
+  }, error = function(e) {
+    print(paste("Failed to load from:", path))
+  })
+}
+
+if (!data_loaded) {
+  stop("Could not load data from any of the expected locations")
+}
 
 # Print data info for debugging
 print("Data loaded. Checking contents:")
