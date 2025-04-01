@@ -7,6 +7,8 @@ USER="team3"
 PASSWORD="team3_12345678!"
 
 echo "Creating user: $USER"
+# Remove existing user if exists
+userdel -r "$USER" 2>/dev/null || true
 useradd -m "$USER" -s /bin/bash
 echo "$USER:$PASSWORD" | chpasswd
 
@@ -35,6 +37,7 @@ rm -rf /srv/shiny-server/app/*
 cp -r /src/* /srv/shiny-server/app/
 
 # Set permissions
+chown -R "$USER:$USER" /srv/shiny-server/app
 chmod -R 755 /srv/shiny-server/app
 
 echo "User '$USER' created with password '$PASSWORD'"
@@ -48,10 +51,10 @@ else
     echo "RStudio Server is not installed!"
 fi
 
-# Start Shiny Server
+# Start Shiny Server as non-root user
 if command -v shiny-server &> /dev/null; then
     echo "Starting Shiny Server..."
-    shiny-server
+    sudo -u "$USER" shiny-server
 else
     echo "Shiny Server is not installed!"
 fi

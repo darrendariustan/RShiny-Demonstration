@@ -33,8 +33,9 @@ ENV GDAL_DATA=/usr/share/gdal
 COPY requirements.R /tmp/requirements.R
 RUN Rscript /tmp/requirements.R
 
-# Create data and src directories
-RUN mkdir -p /data /src && chmod 775 /data /src
+# Create data and src directories with proper permissions
+RUN mkdir -p /data /src && \
+    chmod 775 /data /src
 
 # Expose both RStudio and Shiny Server ports
 EXPOSE 8787 3838
@@ -43,4 +44,5 @@ EXPOSE 8787 3838
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Use CMD instead of ENTRYPOINT for easier debugging
+CMD ["/bin/bash"]
