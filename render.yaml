@@ -2,12 +2,12 @@ services:
   # A Docker web service
   - type: web
     name: traffic-accidents-shiny
-    runtime: docker
+    env: docker
     dockerfilePath: ./SETUP/dockerfile
     dockerContext: .
     plan: free
     repo: https://github.com/darrendariustan/r-shiny-traffic-accidents
-    branch: main
+    branch: master
     healthCheckPath: /
     envVars:
       - key: R_SHINY_PORT
