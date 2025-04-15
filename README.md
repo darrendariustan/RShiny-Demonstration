@@ -1,4 +1,9 @@
 # Traffic Accidents Analysis Dashboard
+[![Deployed App](https://img.shields.io/badge/Live%20App-Traffic%20Accidents%20Dashboard-brightgreen)](https://traffic-accidents-shiny.onrender.com/)
+
+**Access the live R Shiny application here:**
+👉 [https://traffic-accidents-shiny.onrender.com/](https://traffic-accidents-shiny.onrender.com/)
+
 **Team 3 - Group Project for Data Analytics with R**
 
 A comprehensive Shiny dashboard for analyzing traffic accidents data across multiple countries. The dashboard provides interactive visualizations including heatmaps, time series analysis, and severity correlations.
