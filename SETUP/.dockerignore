@@ -1,0 +1,12 @@
+# Ignore data files
+*.csv
+
+# Ignore data processing script
+data_processing.R
+
+# Common files to ignore
+.git
+.gitignore
+.Rhistory
+.Rproj.user
+*.Rproj 
