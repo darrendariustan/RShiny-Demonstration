@@ -17,3 +17,10 @@ services:
         - SRC/**
         - DATA/**
         - SETUP/**
+    mounts:
+      - source: ./SRC
+        destination: /src
+        type: custom
+      - source: ./DATA
+        destination: /data
+        type: custom
