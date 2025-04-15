@@ -4,7 +4,7 @@ services:
     name: traffic-accidents-shiny
     env: docker
     dockerfilePath: ./SETUP/dockerfile
-    dockerContext: .
+    dockerContext: ./SETUP
     plan: free
     repo: https://github.com/darrendariustan/r-shiny-traffic-accidents
     branch: master
