@@ -30,7 +30,7 @@ ENV PROJ_LIB=/usr/share/proj \
     GDAL_DATA=/usr/share/gdal
 
 # Install R packages using requirements.R
-COPY requirements.R /tmp/requirements.R
+COPY SETUP/requirements.R /tmp/requirements.R
 RUN Rscript -e 'install.packages("remotes", repos="https://cran.rstudio.com/")' \
     && Rscript /tmp/requirements.R \
     && rm -rf /tmp/downloaded_packages/* \
@@ -40,11 +40,15 @@ RUN Rscript -e 'install.packages("remotes", repos="https://cran.rstudio.com/")' 
 RUN mkdir -p /data /src \
     && chmod 777 /data /src
 
+# Copy application source code and data
+COPY SRC/ /src/
+COPY DATA/ /data/
+
 # Expose ports
 EXPOSE 8787 3838
 
 # Copy and set up entrypoint script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY SETUP/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
